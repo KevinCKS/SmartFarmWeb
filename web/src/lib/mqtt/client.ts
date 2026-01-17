@@ -331,7 +331,9 @@ class MQTTClientManager {
   getConnected(): boolean {
     // 실제 클라이언트의 연결 상태를 우선적으로 확인
     // 클라이언트가 존재하고 연결되어 있으면 true
-    if (this.client?.connected === true) {
+    const clientConnected = this.client?.connected === true;
+    
+    if (clientConnected) {
       // 실제 연결 상태와 내부 플래그 동기화
       if (!this.isConnected) {
         this.isConnected = true;
@@ -340,10 +342,19 @@ class MQTTClientManager {
     }
     
     // 클라이언트가 없거나 연결되지 않은 경우
+    // 내부 플래그도 false로 설정
     if (this.isConnected) {
       this.isConnected = false;
     }
+    
     return false;
+  }
+
+  /**
+   * 실제 MQTT 클라이언트 인스턴스 반환 (상태 확인용)
+   */
+  getClientInstance(): MqttClient | null {
+    return this.client;
   }
 }
 

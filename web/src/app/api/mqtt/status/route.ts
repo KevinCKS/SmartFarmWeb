@@ -12,17 +12,36 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const client = getMQTTClient();
-    const isConnected = client.getConnected();
+    
+    // 실제 MQTT 클라이언트 인스턴스 확인
+    const mqttClient = client.getClientInstance();
+    
+    // 실제 연결 상태 확인 (가장 정확한 방법)
+    const isClientConnected = mqttClient?.connected === true;
+    
+    // getConnected() 메서드로도 확인
+    const isManagerConnected = client.getConnected();
+    
+    // 둘 중 하나라도 true이면 연결된 것으로 간주
+    const connected = isClientConnected || isManagerConnected;
 
     // 디버깅을 위한 상세 정보 (개발 환경에서만)
     const debugInfo = process.env.NODE_ENV === 'development' ? {
       hasClient: !!client,
-      clientConnected: (client as any).client?.connected,
+      hasMqttClient: !!mqttClient,
+      clientConnected: mqttClient?.connected,
       internalConnected: (client as any).isConnected,
+      isClientConnected,
+      isManagerConnected,
+      hasEnvVars: !!(
+        process.env.MQTT_BROKER_URL &&
+        process.env.MQTT_USERNAME &&
+        process.env.MQTT_PASSWORD
+      ),
     } : undefined;
 
     return NextResponse.json({
-      connected: isConnected,
+      connected,
       timestamp: new Date().toISOString(),
       ...(debugInfo && { debug: debugInfo }),
     });
