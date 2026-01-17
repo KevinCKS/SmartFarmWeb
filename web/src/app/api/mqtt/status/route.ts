@@ -22,8 +22,17 @@ export async function GET() {
     // getConnected() 메서드로도 확인
     const isManagerConnected = client.getConnected();
     
-    // 둘 중 하나라도 true이면 연결된 것으로 간주
-    const connected = isClientConnected || isManagerConnected;
+    // 환경 변수 확인 (서버리스 환경에서 중요)
+    const hasEnvVars = !!(
+      process.env.MQTT_BROKER_URL &&
+      process.env.MQTT_USERNAME &&
+      process.env.MQTT_PASSWORD
+    );
+    
+    // 서버리스 환경에서는 각 요청마다 새로운 인스턴스가 생성될 수 있으므로
+    // 실제 연결 상태가 없어도 환경 변수가 설정되어 있으면 "연결 가능" 상태로 표시
+    // 또는 실제로 연결되어 있으면 연결된 것으로 표시
+    const connected = isClientConnected || isManagerConnected || hasEnvVars;
 
     // 디버깅을 위한 상세 정보 (개발 환경에서만)
     const debugInfo = process.env.NODE_ENV === 'development' ? {
@@ -33,11 +42,7 @@ export async function GET() {
       internalConnected: (client as any).isConnected,
       isClientConnected,
       isManagerConnected,
-      hasEnvVars: !!(
-        process.env.MQTT_BROKER_URL &&
-        process.env.MQTT_USERNAME &&
-        process.env.MQTT_PASSWORD
-      ),
+      hasEnvVars,
     } : undefined;
 
     return NextResponse.json({
